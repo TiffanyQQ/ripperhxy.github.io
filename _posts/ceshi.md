@@ -1,0 +1,555 @@
+---
+layout: post
+title: 博客测试
+date: 2020-01-05
+tags: All About Java
+---
+
+## Http
+
+### http协议
+
+对浏览器客户端和服务器端之间数据传输的格式规范
+
+### 请求资源
+
+URL:  统一资源定位符。http://localhost:8080/day09/testImg.html。只能定位互联网资源。是URI的子集。
+
+URI： 统一资源标记符。/day09/hello。用于标记任何资源。可以是本地文件系统，局域网的资源（//192.168.14.10/myweb/index.html），可以是互联网。
+
+### 实体内容
+
+只有post提交的参数会放到实体内容中去
+
+### 时间戳
+
+很多网站在发布版本之前，都会在URL请求地址后面加上一个实现戳进行版本更新。（使用时间戳防止浏览器缓存，Http协议中响应吗304从本地读取缓存200才是从服务器端获取数据）
+
+时间戳的使用可以使网页的每次更新  浏览器可以及时更新，比如说一些静态资源（图片或者js文件），如果url后面没有加上时间戳浏览器一般会直接读取浏览器中的缓存，不会及时更新。
+
+### 防盗链
+
+在一个项目b中盗用a项目的资源。
+
+反盗链机制：
+
+1、Java代码控制请求来源资源判断Referer
+
+2、使用nginx反向代理解决防盗链
+
+### 传递的请求参数如何获取
+
+GET方式： 参数放在URI后面
+
+POST方式： 参数放在实体内容中
+
+获取GET方式参数：
+
+request.getQueryString();
+
+获取POST方式参数：
+
+request.getInputStream();
+
+问题：但是以上两种不通用，而且获取到的参数还需要进一步地解析。所以可以使用统一方便的获取参数的方式：
+
+核心的API：
+
+request.getParameter("参数名");  根据参数名获取参数值（注意，只能获取一个值的参数）
+
+request.getParameterValue("参数名“)；根据参数名获取参数值（可以获取多个值的参数）
+
+request.getParameterNames();   获取所有参数名称列表  
+
+### 状态码: 服务器处理请求的结果（状态）
+
+常见的状态：
+
+200 ：  表示请求处理完成并完美返回
+
+302：   表示请求需要进一步细化。
+
+304：   读取本地缓存
+ 404：   表示客户访问的资源找不到。
+
+500：   表示服务器的资源发送错误。（服务器内部错误）
+
+Location: http://localhost/index.jsp   -表示重定向的地址，该头和302的状态码一起使用。
+
+### 请求重定向
+
+重定向是外部访问---客服端跳转，地址会发生改变2次请求，效率比较低
+
+转发服务器内部
+
+![1546853093758](/images/blog/http/redirect.png)
+
+### Https（ssl+证书）
+
+与http区别
+
+1、https 协议需要到 ca 申请证书，一般免费证书较少，因而需要一定费用。
+
+2、http 是超文本传输协议，信息是明文传输，https 则是具有安全性的 ssl 加密传输协议。
+
+3、http 和 https 使用的是完全不同的连接方式，用的端口也不一样，前者是 80，后者是 443。
+
+4、http 的连接很简单，是无状态的；HTTPS 协议是由 SSL+HTTP 协议构建的可进行加密传输、身份认证的网络协议，比 http 协议安全。
+
+## 表单防止重复提交&跨域五种实战解决方案
+
+### 长连接与短连接的区别
+
+在HTTP/1.0中，默认使用的是短连接。也就是说，浏览器和服务器每进行一次HTTP操作，就建立一次连接，但任务结束就中断连接。如果客户端浏览器访问的某个HTML或其他类型的 Web页中包含有其他的Web资源，如JavaScript文件、图像文件、CSS文件等；当浏览器每遇到这样一个Web资源，就会建立一个HTTP会话。
+
+但从 HTTP/1.1起，默认使用长连接，用以保持连接特性。使用长连接的HTTP协议，会在响应头有加入这行代码：Connection:keep-alive
+
+在使用长连接的情况下，当一个网页打开完成后，客户端和服务器之间用于传输HTTP数据的 TCP连接不会关闭，如果客户端再次访问这个服务器上的网页，会继续使用这一条已经建立的连接。Keep-Alive不会永久保持连接，它有一个保持时间，可以在不同的服务器软件（如Apache）中设定这个时间。实现长连接要客户端和服务端都支持长连接。
+
+HTTP协议的长连接和短连接，实质上是TCP协议的长连接和短连接。
+
+长连接：建立连接（三次握手）---->数据传输---->保持连接---->数据传输---->关闭
+
+短连接：建立连接（三次握手）---->数据传输---->关闭（四次挥手）
+
+长连接特性：在第二次请求的时候不用再经历三次握手的过程，效率比较高
+
+### 长连接关闭
+
+1. 响应头Keep-Alive: timeout。这个值能够让一些浏览器主动关闭连接，这样服务器就不必要去关闭连接了。
+
+2. tcp自动探测一次，发现对方关闭，则断开连接
+
+### 长连接和短连接的优缺点
+
+长连接可以省去较多的TCP建立和关闭的操作，减少浪费，节约时间。对于频繁请求资源的客户来说，较适用长连接。不过这里存在一个问题，存活功能的探测周期太长，还有就是它只是探测TCP连接的存活，属于比较斯文的做法，遇到恶意的连接时，保活功能就不够使了。
+
+短连接对于服务器来说管理较为简单，存在的连接都是有用的连接，不需要额外的控制手段。但如果客户请求频繁，将在TCP的建立和关闭操作上浪费时间和带宽。
+
+### 长连接和短连接的应用场景
+
+长连接：	默认网站长连接、rpc远程调用、dubbo，netty长连接、移动APP消息推送、长连接推送、httpclient长连接
+
+短连接：调用接口，如果不是特别频繁，基本上都使用短连接。
+
+### 服务器模拟http请求工具
+
+```java
+/**
+	 * 发送 post请求访问本地应用并根据传递参数不同返回不同结果
+	 */
+	public void post() {
+		// 创建默认的httpClient实例.
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		// 创建httppost
+		HttpPost httppost = new HttpPost("http://localhost:8080/myDemo/Ajax/serivceJ.action");
+		// 创建参数队列
+		List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+		formparams.add(new BasicNameValuePair("type", "house"));
+		UrlEncodedFormEntity uefEntity;
+		try {
+			uefEntity = new UrlEncodedFormEntity(formparams, "UTF-8");
+			httppost.setEntity(uefEntity);
+			System.out.println("executing request " + httppost.getURI());
+			CloseableHttpResponse response = httpclient.execute(httppost);
+			try {
+				HttpEntity entity = response.getEntity();
+				if (entity != null) {
+					System.out.println("--------------------------------------");
+					System.out.println("Response content: " + EntityUtils.toString(entity, "UTF-8"));
+					System.out.println("--------------------------------------");
+				}
+			} finally {
+				response.close();
+			}
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e1) {
+			e1.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			// 关闭连接,释放资源
+			try {
+				httpclient.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+public static void get() {
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		//请求超时
+		httpclient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 60000);
+		//读取超时
+		httpclient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, 60000);
+		try {
+			// 创建httpget.
+			HttpGet httpget = new HttpGet("http://www.baidu.com/");
+			System.out.println("executing request " + httpget.getURI());
+			// 执行get请求.
+			CloseableHttpResponse response = httpclient.execute(httpget);
+			try {
+				// 获取响应实体
+				HttpEntity entity = response.getEntity();
+				System.out.println("--------------------------------------");
+				// 打印响应状态
+				System.out.println(response.getStatusLine());
+				if (entity != null) {
+					// 打印响应内容长度
+					System.out.println("Response content length: " + entity.getContentLength());
+					// 打印响应内容
+					System.out.println("Response content: " + EntityUtils.toString(entity));
+				}
+				System.out.println("------------------------------------");
+			} finally {
+				response.close();
+			}
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			// 关闭连接,释放资源
+			try {
+				httpclient.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+```
+
+### 跨域实战解决方案
+
+#### 什么是跨域
+
+跨域就是浏览器安全机制，请求访问的域名与ajax请求地址不一致，浏览器会直接无法返回请求结果
+
+#### 解决方案
+
+##### 使用后台response添加header
+
+后台response添加header，response.setHeader("Access-Control-Allow-Origin","*"); 支持所有网站
+
+##### 使用jsonp
+
+```javascript
+$.ajax({
+			type : "POST",
+			async : false,
+			url : "http://a.a.com/a/FromUserServlet?userName=张三",
+			dataType : "jsonp",//数据类型为jsonp  
+			jsonp : "jsonpCallback",//服务端用于接收callback调用的function名的参数  
+			success : function(data) {
+				alert(data.result);
+			},
+			error : function() {
+				alert('fail');
+			}
+		});
+
+```
+
+缺点：只支持get请求，不支持post请求
+
+##### 后台http请求转发
+
+使用HttpClinet转发进行转发
+
+优缺点：浪费资源，不存在跨域问题，抓包分析不到
+
+##### 使用接口网关
+
+使用nginx转发
+
+![1546854897375](/images/blog/http/nginx.png)
+
+##### 使用SpringCloud网关
+
+#### 表单防止重复提交
+
+##### 表单产生重复提交的原因
+
+网络延迟、刷新、点击后退（重新加载）、回退
+
+##### 解决方案
+
+1、前端解决
+
+点击提交按钮后，按钮变灰
+
+<1>使用标识
+
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Form表单</title>
+<script type="text/javascript">
+	var isFlag = false; //表单是否已经提交标识，默认为false
+
+	function submitFlag() {
+
+		if (!isFlag) {
+			isFlag = true;
+			return true;
+		} else {
+			return false;
+		}
+
+	}
+</script>
+</head>
+
+<body>
+	<form action="${pageContext.request.contextPath}/DoFormServlet"
+		method="post" onsubmit="return submitFlag()">
+		用户名：<input type="text" name="userName"> <input type="submit"
+			value="提交" id="submit">
+	</form>
+</body>
+</html>
+
+```
+
+<2>提交后将提交按钮设置为不可用
+
+```javascript
+function dosubmit(){
+    //获取表单提交按钮
+    var btnSubmit = document.getElementById("submit");
+    //将表单提交按钮设置为不可用，这样就可以避免用户再次点击提交按钮
+    btnSubmit.disabled= "disabled";
+    //返回true让表单可以正常提交
+    return true;
+}
+
+```
+
+2、使用后端提交解决
+
+对于重新刷新和后退导致表单重复提交的问题，既然客户端无法解决，那么就在服务器端解决，在服务器端解决就需要用到session了。
+
+  具体的做法：**在服务器端生成一个唯一的随机标识号，专业术语称为Token(令牌)，同时在当前用户的Session域中保存这个Token。然后将Token发送到客户端的Form表单中，在Form表单中使用隐藏域来存储这个Token，表单提交的时候连同这个Token一起提交到服务器端，然后在服务器端判断客户端提交上来的Token与服务器端生成的Token是否一致，如果不一致，那就是重复提交了，此时服务器端就可以不处理重复提交的表单。如果相同则处理表单提交，处理完后清除当前用户的Session域中存储的标识号。**
+   在下列情况下，服务器程序将拒绝处理用户提交的表单请求：
+
+1. **存储Session域中的Token(令牌)与表单提交的Token(令牌)不同。**
+
+2. **当前用户的Session中不存在Token(令牌)。**
+
+3. **用户提交的表单数据中没有Token(令牌)。**
+
+   转发代码：
+
+```java
+@WebServlet("/ForwardServlet")
+public class ForwardServlet extends HttpServlet {
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		req.getSession().setAttribute("sesionToken", TokenUtils.getToken());
+		req.getRequestDispatcher("form.jsp").forward(req, resp);
+	}
+}
+
+```
+
+转发页面：
+
+```jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Form表单</title>
+
+</head>
+
+<body>
+	<form action="${pageContext.request.contextPath}/DoFormServlet"
+		method="post" onsubmit="return dosubmit()">
+		<input type="hidden" name="token" value="${sesionToken}"> 用户名：<input type="text"
+			name="userName"> <input type="submit" value="提交" id="submit">
+	</form>
+</body>
+</html>
+
+```
+
+后端Java代码：
+
+```java
+@WebServlet("/DoFormServlet")
+public class DoFormServlet extends HttpServlet {
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		req.setCharacterEncoding("UTF-8");
+		boolean flag = isFlag(req);
+		if (!flag) {
+			resp.getWriter().write("已经提交...");
+			System.out.println("数据已经提交了..");
+			return;
+		}
+		String userName = req.getParameter("userName");
+		try {
+			Thread.sleep(300);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		System.out.println("往数据库插入数据...." + userName);
+		resp.getWriter().write("success");
+	}
+
+	public boolean isFlag(HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		String sesionToken = (String) session.getAttribute("sesionToken");
+		String token = request.getParameter("token");
+		if (!(token.equals(sesionToken))) {
+			return false;
+		}
+		session.removeAttribute("sesionToken");
+		return true;
+	}
+}
+
+```
+
+### 使用Filter防止Xss攻击
+
+#### 什么是Xss攻击
+
+XSS攻击使用Javascript脚本注入进行攻击
+
+例如在表单中注入:
+
+```javascript
+<script>location.href='http://www.itmayiedu.com'</script>
+```
+
+实例代码：
+
+jsp代码
+
+```javascript
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<form action="XssDemo" method="post">
+		<input type="text" name="userName"> <input type="submit">
+	</form>
+</body>
+</html>
+
+```
+
+```javascript
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+
+</head>
+<body>userName:${userName}
+
+</body>
+</html>
+
+```
+
+java代码
+
+```java
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet("/XssDemo")
+public class XssDemo extends HttpServlet {
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		String userName = req.getParameter("userName");
+		req.setAttribute("userName", userName);
+		req.getRequestDispatcher("showUserName.jsp").forward(req, resp);
+	}
+
+
+}
+
+```
+
+#### 解决方案
+
+使用Fileter过滤器过滤器注入标签
+
+XSSFilter
+
+```java
+public class XssFiter implements Filter {
+	public void init(FilterConfig filterConfig) throws ServletException {
+	}
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
+		HttpServletRequest req = (HttpServletRequest) request;
+		XssAndSqlHttpServletRequestWrapper xssRequestWrapper = new XssAndSqlHttpServletRequestWrapper(req);
+		chain.doFilter(xssRequestWrapper, response);
+	}
+	public void destroy() {
+
+	}
+}
+
+
+```
+
+XssAndSqlHttpServletRequestWrapper
+
+```java
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * 防止XSS攻击
+ */
+public class XssAndSqlHttpServletRequestWrapper extends HttpServletRequestWrapper {
+	HttpServletRequest request;
+	public XssAndSqlHttpServletRequestWrapper(HttpServletRequest request) {
+		super(request);
+		this.request = request;
+	}
+	@Override
+	public String getParameter(String name) {
+		String value = request.getParameter(name);
+		System.out.println("name:" + name + "," + value);
+		if (!StringUtils.isEmpty(value)) {
+			// 转换Html
+			value = StringEscapeUtils.escapeHtml4(value);
+		}
+		return value;
+	}
+}
+
+```
